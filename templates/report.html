@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css" />
-  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
 </head>
 <body>
   <header class="site-header">
@@ -24,15 +24,15 @@
   </header>
 
   <main class="container">
-    <section class="card">
+    <section class="card" id="report-section">
       <div class="report-head row">
         <div>
           <h1 class="report-title">Scan Report</h1>
-          <p class="muted">Target: <span class="mono">{{.TargetURL}}</span></p>
+          <p class="muted">Target: <span class="mono" id="target-url"></span></p>
         </div>
         <div class="badge-stack">
-          <div class="badge">Score: <strong>{{.Score}}</strong></div>
-          <div class="badge grade">Grade: <strong>{{.Grade}}</strong></div>
+          <div class="badge">Score: <strong id="score"></strong></div>
+          <div class="badge grade">Grade: <strong id="grade"></strong></div>
         </div>
       </div>
 
@@ -40,29 +40,16 @@
 
       <section aria-labelledby="issues-title">
         <h2 id="issues-title" class="section-title">Issues</h2>
-        {{if .Findings}}
-          <ul class="list">
-            {{range .Findings}}
-              <li class="list-item">
-                <div class="list-line">
-                  <span class="chip warn">{{.Header}}</span>
-                  <span class="issue">{{.Issue}}</span>
-                </div>
-                <p class="advice">{{.Advice}}</p>
-              </li>
-            {{end}}
-          </ul>
-        {{else}}
-          <div class="empty-state">
-            <h3>No issues found</h3>
-            <p>Everything looks properly configured. Nice work!</p>
-          </div>
-        {{end}}
+        <ul class="list" id="issues-list"></ul>
+        <div class="empty-state" id="no-issues" style="display:none;">
+          <h3>No issues found</h3>
+          <p>Everything looks properly configured. Nice work!</p>
+        </div>
       </section>
 
       <div class="actions">
         <a class="btn ghost" href="/">Run another scan</a>
-        <a class="btn" href="/api/scan?url={{.TargetURL}}" target="_blank" rel="noopener">View JSON</a>
+        <a class="btn" id="view-json" target="_blank" rel="noopener">View JSON</a>
       </div>
     </section>
   </main>
@@ -70,12 +57,53 @@
   <footer class="site-footer">
     <div class="container row small">
       <span>© <span id="year"></span> HeaderHawk</span>
-      <span>Made with 🩷 by <a href="https://www.piyushinfinity.dev/" target="_blank" rel="noopener" style="text-decoration: none; color: rgb(255, 0, 157);">BATMAN</a></span>
+      <span>Made with 🩷 by 
+        <a href="https://www.piyushinfinity.dev/" target="_blank" rel="noopener" style="text-decoration: none; color: rgb(255, 0, 157);">BATMAN</a>
+      </span>
     </div>
   </footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    const report = JSON.parse(localStorage.getItem("hh_report"));
+
+    if (!report) {
+      document.getElementById("report-section").innerHTML = `
+        <div class="empty-state">
+          <h3>No report available</h3>
+          <p>Please run a scan from the homepage.</p>
+        </div>
+      `;
+    } else {
+      // Fill header details
+      document.getElementById("target-url").textContent = report.TargetURL || "Unknown";
+      document.getElementById("score").textContent = report.Score ?? "-";
+      document.getElementById("grade").textContent = report.Grade ?? "-";
+
+      // JSON link
+      const backendBase = "https://headerhawk.onrender.com"; // change if needed
+      document.getElementById("view-json").href = `${backendBase}/api/scan?url=${encodeURIComponent(report.TargetURL)}`;
+
+      // Issues
+      const list = document.getElementById("issues-list");
+      if (report.Findings && report.Findings.length > 0) {
+        report.Findings.forEach(f => {
+          const li = document.createElement("li");
+          li.className = "list-item";
+          li.innerHTML = `
+            <div class="list-line">
+              <span class="chip warn">${f.Header}</span>
+              <span class="issue">${f.Issue}</span>
+            </div>
+            <p class="advice">${f.Advice}</p>
+          `;
+          list.appendChild(li);
+        });
+      } else {
+        document.getElementById("no-issues").style.display = "block";
+      }
+    }
   </script>
 </body>
 </html>
