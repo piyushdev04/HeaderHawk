@@ -112,3 +112,64 @@ body {
 /* Utilities */
 .muted { color: var(--muted); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+/* =====================
+   Collapsible Sections for Report
+   ===================== */
+
+/* Collapsible container */
+.collapsible {
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: #fff;
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+/* Collapsible header/button */
+.collapsible-header {
+  cursor: pointer;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--stroke);
+  transition: background 0.15s ease;
+}
+.collapsible-header:hover {
+  background: var(--accent-weak);
+}
+
+/* Collapsible content */
+.collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  padding: 0 16px;
+}
+.collapsible-content.open {
+  padding: 12px 16px;
+}
+
+/* Add indicator arrow */
+.collapsible-header::after {
+  content: "▸";
+  transition: transform 0.3s ease;
+}
+.collapsible-header.open::after {
+  transform: rotate(90deg);
+}
+
+/* Optional: style raw header list inside collapsible */
+.collapsible-content .list {
+  gap: 8px;
+}
+.collapsible-content .list-item {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: #f9fafb;
+}
