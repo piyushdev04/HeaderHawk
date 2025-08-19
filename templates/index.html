@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css" />
-  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
 </head>
 <body>
   <header class="site-header">
@@ -18,8 +18,7 @@
         <span class="title">HeaderHawk</span>
       </div>
       <nav aria-label="Primary" class="nav">
-        <!-- <a href="https://example.com" target="_blank" rel="noopener" class="nav-link" aria-disabled="true">Docs</a> -->
-        <a href="/api/scan?url=https://example.com" class="nav-cta">API</a>
+        <a href="https://headerhawk-backend.onrender.com/api/scan?url=https://example.com" class="nav-cta" target="_blank" rel="noopener">API</a>
       </nav>
     </div>
   </header>
@@ -31,27 +30,51 @@
     </section>
 
     <section class="card">
-      <form action="/scan" method="post" class="scan-form" aria-label="Scan a website for security headers">
+      <form id="scan-form" class="scan-form" aria-label="Scan a website for security headers">
         <label for="url" class="label">Target URL</label>
         <div class="input-row">
           <input id="url" name="url" type="url" inputmode="url" placeholder="https://example.com" required class="input" />
           <button type="submit" class="btn">Scan</button>
         </div>
-        <p class="hint">Tip: you can also call the JSON API → <code>/api/scan?url=…</code></p>
+        <p class="hint">Tip: you can also call the JSON API → 
+          <code>https://headerhawk-backend.onrender.com/api/scan?url=…</code>
+        </p>
       </form>
     </section>
-
   </main>
 
   <footer class="site-footer">
     <div class="container row small">
       <span>© <span id="year"></span> HeaderHawk</span>
-      <span>Made with 🩷 by <a href="https://www.piyushinfinity.dev/" target="_blank" rel="noopener" style="text-decoration: none; color: rgb(255, 0, 157);">BATMAN</a></span>
+      <span>Made with 🩷 by 
+        <a href="https://www.piyushinfinity.dev/" target="_blank" rel="noopener" style="text-decoration: none; color: rgb(255, 0, 157);">BATMAN</a>
+      </span>
     </div>
   </footer>
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    const backendBase = "https://headerhawk.onrender.com"; // change if your Render URL differs
+
+    document.getElementById("scan-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const url = document.getElementById("url").value.trim();
+      if (!url) return;
+
+      // Call backend API
+      const apiUrl = `${backendBase}/api/scan?url=${encodeURIComponent(url)}`;
+      try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        // Pass data to report.html via localStorage
+        localStorage.setItem("hh_report", JSON.stringify(data));
+        window.location.href = "/report.html";
+      } catch (err) {
+        alert("Failed to scan. Please check the backend or try again.");
+      }
+    });
   </script>
 </body>
 </html>
