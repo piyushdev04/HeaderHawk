@@ -2,7 +2,7 @@
 document.getElementById('year').textContent = new Date().getFullYear();
 
 const report = JSON.parse(localStorage.getItem("hh_report"));
-const backendBase = "http://localhost:8080"; // Update if deployed elsewhere
+const backendBase = "https://headerhawk.onrender.com"; // Update if deployed elsewhere
 
 const reportSection = document.getElementById("report-section");
 const list = document.getElementById("issues-list");
