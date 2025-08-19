@@ -31,4 +31,4 @@ HeaderHawk:
 
 > “I’m more concerned with being right than being fast.”  
 — Gilfoyle, *Silicon Valley* 
-![alt text](image.png)
+![alt text](wp11727429-gilfoyle-wallpapers.jpg)
