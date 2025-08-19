@@ -26,3 +26,9 @@ HeaderHawk:
 - **X-Frame-Options:** Stops clickjacking attacks.  
 - **X-Content-Type-Options:** Prevents browsers from misinterpreting files.  
 - **Referrer-Policy:** Controls what sensitive info leaks when users click links.  
+
+---
+
+> “I’m more concerned with being right than being fast.”  
+— Gilfoyle, *Silicon Valley* 
+![alt text](image.png)
