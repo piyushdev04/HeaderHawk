@@ -63,47 +63,6 @@
     </div>
   </footer>
 
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    const report = JSON.parse(localStorage.getItem("hh_report"));
-
-    if (!report) {
-      document.getElementById("report-section").innerHTML = `
-        <div class="empty-state">
-          <h3>No report available</h3>
-          <p>Please run a scan from the homepage.</p>
-        </div>
-      `;
-    } else {
-      // Fill header details
-      document.getElementById("target-url").textContent = report.TargetURL || "Unknown";
-      document.getElementById("score").textContent = report.Score ?? "-";
-      document.getElementById("grade").textContent = report.Grade ?? "-";
-
-      // JSON link
-      const backendBase = "https://headerhawk.onrender.com"; // change if needed
-      document.getElementById("view-json").href = `${backendBase}/api/scan?url=${encodeURIComponent(report.TargetURL)}`;
-
-      // Issues
-      const list = document.getElementById("issues-list");
-      if (report.Findings && report.Findings.length > 0) {
-        report.Findings.forEach(f => {
-          const li = document.createElement("li");
-          li.className = "list-item";
-          li.innerHTML = `
-            <div class="list-line">
-              <span class="chip warn">${f.Header}</span>
-              <span class="issue">${f.Issue}</span>
-            </div>
-            <p class="advice">${f.Advice}</p>
-          `;
-          list.appendChild(li);
-        });
-      } else {
-        document.getElementById("no-issues").style.display = "block";
-      }
-    }
-  </script>
+  <script src="/static/js/report.js" defer></script>
 </body>
 </html>
