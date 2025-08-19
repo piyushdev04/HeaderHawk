@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"html/template"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,65 +18,35 @@ type Finding struct {
 }
 
 type Report struct {
-	TargetURL string    `json:"target_url"`
-	Findings  []Finding `json:"findings"`
-	Score     int       `json:"score"`
-	Grade     string    `json:"grade"`
+	TargetURL      string    `json:"target_url"`
+	Findings       []Finding `json:"findings"`
+	MissingHeaders []string  `json:"missing_headers"`
+	Score          int       `json:"score"`
+	Grade          string    `json:"grade"`
 }
 
 func main() {
-	tpl := template.Must(template.ParseGlob("templates/*.html"))
+	// Serve static files
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
-	// Explicitly serve favicon (if stored in ./static/favicon.ico)
-	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./static/favicon.ico")
-	})
-
-	// Home page
+	// Serve HTML pages
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			tpl.ExecuteTemplate(w, "index.html", nil)
-			return
-		}
+		http.ServeFile(w, r, "index.html")
+	})
+	http.HandleFunc("/report.html", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "report.html")
 	})
 
-	// Ping endpoint for uptime monitoring
+	// API endpoints
+	http.HandleFunc("/api/scan", scanHandler)
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Ping received from %s at %s", r.RemoteAddr, time.Now().Format(time.RFC3339))
 		w.Write([]byte("pong"))
 	})
 
-	// API endpoint for scanning
-	http.HandleFunc("/api/scan", func(w http.ResponseWriter, r *http.Request) {
-		target := r.URL.Query().Get("url")
-		if target == "" {
-			http.Error(w, "Missing url parameter", http.StatusBadRequest)
-			return
-		}
-		report, err := scanSecurityHeaders(target)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(report)
-	})
-
-	// HTML report endpoint
-	http.HandleFunc("/scan", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-		target := r.FormValue("url")
-		report, err := scanSecurityHeaders(target)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		tpl.ExecuteTemplate(w, "report.html", report)
+	// Favicon
+	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/favicon.ico")
 	})
 
 	port := ":8080"
@@ -84,68 +54,77 @@ func main() {
 	log.Fatal(http.ListenAndServe(port, nil))
 }
 
+func scanHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	target := r.URL.Query().Get("url")
+	if target == "" {
+		http.Error(w, "Missing url parameter", http.StatusBadRequest)
+		return
+	}
+
+	report, err := scanSecurityHeaders(target)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(report)
+}
+
 func scanSecurityHeaders(target string) (*Report, error) {
 	if !strings.HasPrefix(target, "http") {
 		target = "https://" + target
 	}
+
 	_, err := url.ParseRequestURI(target)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid URL: %v", err)
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	resp, err := client.Get(target)
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, _ := http.NewRequest("GET", target, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36")
+
+	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch target: %v", err)
 	}
 	defer resp.Body.Close()
 
-	findings := []Finding{}
-	score := 100
-
+	// Only essential headers
 	checks := map[string]struct {
-		expected string
-		advice   string
-		points   int
+		Advice string
+		Points int
 	}{
-		"Strict-Transport-Security": {
-			expected: "present",
-			advice:   "Add HSTS to force HTTPS.",
-			points:   10,
-		},
-		"Content-Security-Policy": {
-			expected: "present",
-			advice:   "Define a strong CSP to prevent XSS.",
-			points:   10,
-		},
-		"X-Frame-Options": {
-			expected: "DENY or SAMEORIGIN",
-			advice:   "Prevent clickjacking with X-Frame-Options.",
-			points:   5,
-		},
-		"X-Content-Type-Options": {
-			expected: "nosniff",
-			advice:   "Prevent MIME sniffing.",
-			points:   5,
-		},
-		"Referrer-Policy": {
-			expected: "strict or no-referrer",
-			advice:   "Control referrer data leakage.",
-			points:   5,
-		},
+		"Strict-Transport-Security": {"Forces HTTPS, protects from downgrade attacks.", 10},
+		"Content-Security-Policy":   {"Prevents XSS by locking down allowed resources.", 10},
+		"X-Frame-Options":           {"Stops clickjacking attacks.", 5},
+		"X-Content-Type-Options":    {"Prevents browsers from misinterpreting files.", 5},
+		"Referrer-Policy":           {"Controls what sensitive info leaks when users click links.", 5},
 	}
 
+	findings := []Finding{}
+	missing := []string{}
+	score := 100
+
 	for header, cfg := range checks {
-		val := resp.Header.Get(header)
-		if val == "" {
-			score -= cfg.points
+		if val := resp.Header.Get(header); val == "" {
+			score -= cfg.Points
+			missing = append(missing, header)
 			findings = append(findings, Finding{
 				Header: header,
 				Issue:  "Missing",
-				Advice: cfg.advice,
-				Score:  cfg.points,
+				Advice: cfg.Advice,
+				Score:  cfg.Points,
 			})
 		}
 	}
@@ -163,9 +142,10 @@ func scanSecurityHeaders(target string) (*Report, error) {
 	}
 
 	return &Report{
-		TargetURL: target,
-		Findings:  findings,
-		Score:     score,
-		Grade:     grade,
+		TargetURL:      target,
+		Findings:       findings,
+		MissingHeaders: missing,
+		Score:          score,
+		Grade:          grade,
 	}, nil
 }
