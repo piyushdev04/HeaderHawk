@@ -4,7 +4,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 const form = document.getElementById("scan-form");
 const input = document.getElementById("url");
 
-const backendBase = "http://localhost:8080"; // Update if deployed elsewhere
+const backendBase = "https://headerhawk.onrender.com"; // Update if deployed elsewhere
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
