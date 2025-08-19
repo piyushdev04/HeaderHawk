@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HeaderHawk — Security Headers Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="/favicon.ico" sizes="any">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container row">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🦅</div>
+        <span class="title">HeaderHawk</span>
+      </div>
+      <nav aria-label="Primary" class="nav">
+        <!-- <a href="https://example.com" target="_blank" rel="noopener" class="nav-link" aria-disabled="true">Docs</a> -->
+        <a href="/api/scan?url=https://example.com" class="nav-cta">API</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1 class="hero-title">Your first line of defense in web security scanning</h1>
+      <p class="hero-sub">Scan any site in seconds. Spot missing headers. Patch leaks before attackers find them.</p>
+    </section>
+
+    <section class="card">
+      <form action="/scan" method="post" class="scan-form" aria-label="Scan a website for security headers">
+        <label for="url" class="label">Target URL</label>
+        <div class="input-row">
+          <input id="url" name="url" type="url" inputmode="url" placeholder="https://example.com" required class="input" />
+          <button type="submit" class="btn">Scan</button>
+        </div>
+        <p class="hint">Tip: you can also call the JSON API → <code>/api/scan?url=…</code></p>
+      </form>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container row small">
+      <span>© <span id="year"></span> HeaderHawk</span>
+      <span>Made with 🩷 by <a href="https://www.piyushinfinity.dev/" target="_blank" rel="noopener" style="text-decoration: none; color: rgb(255, 0, 157);">BATMAN</a></span>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
